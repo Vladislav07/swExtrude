@@ -153,10 +153,10 @@ namespace StructuralWeldment
             statusSelect = swModelDocExt.SelectByID2(nameAxis, "AXIS", 0, 0, 0, true, 0, null, (int)swSelectOption_e.swSelectOptionDefault);
             statusSelect = swModelDocExt.SelectByID2(namePlaneSketch, "PLANE", 0, 0, 0, true, 1, null, (int)swSelectOption_e.swSelectOptionDefault);
 
-            FeatureManager featMgr = model.FeatureManager;
+           // FeatureManager featMgr = model.FeatureManager;
 
             // создаём плоскость: Coincident (ось) и Angle (плоскость эскиза) — угол используем из group.Angle
-            RefPlane newPlane = (RefPlane)featMgr.InsertRefPlane(
+            RefPlane newPlane = (RefPlane)fm.InsertRefPlane(
                 (int)swRefPlaneReferenceConstraints_e.swRefPlaneReferenceConstraint_Coincident, 0,
                 (int)swRefPlaneReferenceConstraints_e.swRefPlaneReferenceConstraint_Angle, angle,
                 0, 0);
