@@ -1,0 +1,12 @@
+* Деталь была выбрана в графичекской области, получить точку с координатами pointSelect
+* GetBoundinBox - получить точки pointsBox обрамляющего прямоугольника из PartDoc
+* Найти ближайшую точку из pointsBox к pointSelect - pointDoc
+* В зависимости от соданной плоскости - Front, Top, Rignth получить проекцию точки pointsDoc на созданный эскиз - pointBase
+* Найти ближайшую точку из point1 и point2 к pointSelect - pointEnd
+* Создать точку pointMirror симметричную точки pointBase относительно axis
+* Измерить расстояние от pointBase к pointMirror dBase
+* Соединить точки pointBase с pointMirror линией 
+* Провести линию от pointBase паралельно axix на расстояние dBase, что бы не выходила за координаты  pointBox
+* Соединить конец линии с точкой pointMirror
+* завершить эскиз
+* сделать операцию Extrusion насквоз с эскизом

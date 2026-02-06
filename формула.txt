@@ -1,0 +1,23 @@
+static ((double x, double y) A, (double x, double y) B)
+PerpendicularFromL2ToL1(
+    double x1, double y2,   // точка P1 на L1
+    double Y,               // координата линии L2
+    double alphaRad,        // угол между L1 и L2 (рад)
+    double R                // длина перпендикуляра
+)
+{
+    double sin = Math.Sin(alphaRad);
+    double cos = Math.Cos(alphaRad);
+
+    double xa =
+        x1
+        + (Y - y2) * (cos / sin)
+        + R / sin;
+
+    double ya = Y;
+
+    double xb = xa - R * sin;
+    double yb = Y + R * cos;
+
+    return ((xa, ya), (xb, yb));
+}
