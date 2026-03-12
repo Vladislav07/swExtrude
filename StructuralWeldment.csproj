@@ -49,11 +49,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controler.cs" />
+    <Compile Include="Service.cs" />
     <Compile Include="SolidWorksMacroStartup.cs">
       <DependentUpon>SolidWorksMacro.cs</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SW.cs" />
+    <Compile Include="Calculator.cs" />
     <Compile Include="Weldment.cs" />
   </ItemGroup>
   <ItemGroup>

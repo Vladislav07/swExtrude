@@ -31,7 +31,7 @@ namespace StructuralWeldment
         public double s { get; set; }
         public double[] pointFirst { get; set; }
         public double[] pointSecond { get; set; }
-
+        public string namePlane { get; set; }
 
         public Weldment(string templateProfile)
         {
@@ -41,9 +41,9 @@ namespace StructuralWeldment
             string[] parametry = templateProfile.Split('x');
             try
             {
-               a = Convert.ToInt16(parametry[0])/1000;
-               b = Convert.ToInt16(parametry[1])/1000;
-               s = Convert.ToDouble(parametry[0])/1000;
+               a = Convert.ToInt16(parametry[0]);
+               b = Convert.ToInt16(parametry[1]);
+               s = Convert.ToDouble(parametry[2]);
             }
             catch (Exception)
             {
