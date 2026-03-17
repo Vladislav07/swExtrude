@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using SolidWorks.Interop.sldworks;
+using SolidWorks.Interop.swconst;
+using System.Windows.Forms;
 
 namespace StructuralWeldment
 {
@@ -18,16 +20,50 @@ namespace StructuralWeldment
 
         private Service service;
         private Weldment wd;
-        public Controler(SldWorks sw){
+        public static clsPropMgr pm;
+       
+
+        public Controler(SldWorks sw)
+        {
+
             service = new Service(sw);
             wd = service.GetWeldment();
-            double[] box = service.GetPointsBoundinBox();
+            sw.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swStopDebuggingVstaOnExit, false);
+           // Extrude();
 
+            pm = new clsPropMgr(sw);
+            pm.action += Pm_action;
+            pm.angle += Pm_angle;
+            pm.rotate += Pm_rotate;
+            pm.Show();
+            if (pm != null)
+            {
+                while (pm.IsOpen)
+                {
+                    Application.DoEvents();
+                }
+
+            }
+
+
+        }
+
+        private void Pm_rotate(double obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Pm_angle(double obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void Extrude()
+        {
+            double[] box = service.GetPointsBoundinBox();
             double[][] Points = wd.GetCentetPonts(box);
-            
             string nameAxis = service.AddAxis(Points);
             string namePlaneBase = service.AddPlaneWork(nameAxis, wd.namePlane, (int)wd.rotationAxis);
-
             double[] PontsFirst = wd.GetPointsFirstExtrude(true);
             service.AddSketch(namePlaneBase, PontsFirst);
 
@@ -35,8 +71,17 @@ namespace StructuralWeldment
             service.AddSketch(namePlaneBase, PontsSecond);
         }
 
+        private void Pm_action()
+        {
+            //service.InsertFeature();
+    
+          
 
-		public void Completion(){
+            
+            
+        }
+
+        public void Completion(){
 
 		}
 

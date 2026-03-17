@@ -12,6 +12,7 @@ using System.Text;
 using System.IO;
 using SolidWorks.Interop.sldworks;
 using SolidWorks.Interop.swconst;
+using System.Windows.Forms;
 
 namespace StructuralWeldment
 {
@@ -31,6 +32,11 @@ namespace StructuralWeldment
         public Service(SldWorks swSld){
              swApp = swSld;
              model = (ModelDoc2)swApp.ActiveDoc;
+             if (model == null || model.GetType() != (int)swDocumentTypes_e.swDocPART)
+             {
+                swApp.SendMsgToUser("Откройте деталь перед запуском макроса.");
+                return;
+             }
              CheckingIsPart();
              part = (PartDoc)model;
              mathUtility = (MathUtility)swApp.GetMathUtility();
@@ -39,6 +45,49 @@ namespace StructuralWeldment
              selMgr = (SelectionMgr)model.SelectionManager;
              swSkMgr = model.SketchManager;
         }
+
+        /*
+
+        public object swmMain(object swAppIn, object partIn, object featureIn)
+        {
+            SldWorks swApp = (SldWorks)swAppIn;
+            ModelDoc2 part = (ModelDoc2)partIn;
+            Feature feature = (Feature)featureIn;
+
+            //....
+        }   
+
+        public void InsertFeature()
+
+        {
+                     
+            string macroPath = swApp.GetCurrentMacroPathName();
+
+            string[] methods = new string[9];
+
+            methods[0] = macroPath;
+            methods[1] = "ExampleMacroFeature.SolidWorksMacro";
+            methods[2] = "swmMain";
+
+            methods[3] = macroPath;
+            methods[4] = "ExampleMacroFeature.SolidWorksMacro";
+            methods[5] = "swmPM";
+
+            Feature feat = fm.InsertMacroFeature3(
+                "AngleSurf",
+                "",
+                methods,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                (int)swMacroFeatureOptions_e.swMacroFeatureByDefault);
+                
+        }
+        */
 
 
         public string AddAxis(double[][] Points){
@@ -157,70 +206,7 @@ namespace StructuralWeldment
         
     }
 
-		/* public Weldment GetParamWeldment(){
-            Feature swFeat = (Feature)model.FirstFeature();
-            StructuralMemberFeatureData weldData = null;
-            while (swFeat != null)
-            {
-                string tmp = swFeat.GetTypeName();
-                if (swFeat.GetTypeName() == "WeldMemberFeat")
-                {
-                    weldData = (StructuralMemberFeatureData)swFeat.GetDefinition();
-                    break;
-                }
-                else
-                {
-                    swFeat = (Feature)swFeat.GetNextFeature();
-                }
-            }
 
-            if (weldData == null)
-            {
-                swApp.SendMsgToUser("No Structural Member (элемент сварной балки).");
-                return null;
-            }
-
-            // Получаем группы и сегменты и проверяем что ровно одна группа и ровно один сегмент
-            weldData.AccessSelections(model, null);
-            object[] groups = (object[])weldData.Groups;
-
-            if (groups == null || groups.Length != 1)
-            {
-                swApp.SendMsgToUser("Элемент должен содержать ровно одну группу.");
-                weldData.ReleaseSelectionAccess();
-                return null;
-            }
-
-            StructuralMemberGroup group = (StructuralMemberGroup)groups[0];
-            object[] segs = (object[])group.Segments;
-
-            if (segs == null || segs.Length != 1)
-            {
-                swApp.SendMsgToUser("В группе должен быть ровно один сегмент.");
-                weldData.ReleaseSelectionAccess();
-                return null;
-            }
-
-
-            // Получаем сегмент и линию
-            SketchSegment seg = (SketchSegment)segs[0];
-            SketchLine line = seg as SketchLine;
-            if (line == null)
-            {
-                swApp.SendMsgToUser("Сегмент должен быть линией.");
-                weldData.ReleaseSelectionAccess();
-                return null;
-            }
-            // --- 3) Получаем плоскость эскиза, на которой лежит исходный сегмент ---
-            Sketch sketch = (Sketch)seg.GetSketch();
-            if (sketch == null)
-            {
-                swApp.SendMsgToUser("Не удалось получить эскиз сегмента.");
-                return null;
-            }
-            return null;
-		}
-        */
 
         public Weldment GetWeldment()
         {
