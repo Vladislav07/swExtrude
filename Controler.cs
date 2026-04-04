@@ -29,7 +29,7 @@ namespace StructuralWeldment
             service = new Service(sw);
             wd = service.GetWeldment();
             sw.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swStopDebuggingVstaOnExit, false);
-           // Extrude();
+            Extrude();
 
             pm = new clsPropMgr(sw);
             pm.action += Pm_action;
@@ -66,7 +66,6 @@ namespace StructuralWeldment
             string namePlaneBase = service.AddPlaneWork(nameAxis, wd.namePlane, (int)wd.rotationAxis);
             double[] PontsFirst = wd.GetPointsFirstExtrude(true);
             service.AddSketch(namePlaneBase, PontsFirst);
-
             double[] PontsSecond = wd.GetPointsSecondExtrude(PontsFirst);
             service.AddSketch(namePlaneBase, PontsSecond);
         }

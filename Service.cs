@@ -46,49 +46,6 @@ namespace StructuralWeldment
              swSkMgr = model.SketchManager;
         }
 
-        /*
-
-        public object swmMain(object swAppIn, object partIn, object featureIn)
-        {
-            SldWorks swApp = (SldWorks)swAppIn;
-            ModelDoc2 part = (ModelDoc2)partIn;
-            Feature feature = (Feature)featureIn;
-
-            //....
-        }   
-
-        public void InsertFeature()
-
-        {
-                     
-            string macroPath = swApp.GetCurrentMacroPathName();
-
-            string[] methods = new string[9];
-
-            methods[0] = macroPath;
-            methods[1] = "ExampleMacroFeature.SolidWorksMacro";
-            methods[2] = "swmMain";
-
-            methods[3] = macroPath;
-            methods[4] = "ExampleMacroFeature.SolidWorksMacro";
-            methods[5] = "swmPM";
-
-            Feature feat = fm.InsertMacroFeature3(
-                "AngleSurf",
-                "",
-                methods,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                (int)swMacroFeatureOptions_e.swMacroFeatureByDefault);
-                
-        }
-        */
-
 
         public string AddAxis(double[][] Points){
 
