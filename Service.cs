@@ -46,6 +46,94 @@ namespace StructuralWeldment
              swSkMgr = model.SketchManager;
         }
 
+        public Body2 BuildCutBody(Weldment wd)
+        {
+            model.ClearSelection2(true);
+
+            // --- базовая геометрия ---
+            double[] box = GetPointsBoundinBox();
+            double[][] axisPts = wd.GetCentetPonts(box);
+
+            string axis = AddAxis(axisPts);
+            string plane = AddPlaneWork(axis, wd.namePlane, (int)wd.rotationAxis);
+
+            // --- первый профиль ---
+            double[] p1 = wd.GetPointsFirstExtrude(true);
+            string sk1 = CreateSketch(plane, p1);
+
+            // --- второй профиль ---
+            double[] p2 = wd.GetPointsSecondExtrude(p1);
+            string sk2 = CreateSketch(plane, p2);
+
+            // --- создаём tool body ---
+            Body2 toolBody = CreateToolBody(new[] { sk1 });
+
+            if (toolBody == null)
+                throw new Exception("Не удалось создать tool body");
+          
+
+            return toolBody;
+        }
+
+        public bool ApplyCut(Weldment wd)
+        {
+            if (wd == null)
+            {
+                swApp.SendMsgToUser("Weldment = null");
+                return false;
+            }
+
+            Body2 toolBody = BuildCutBody(wd);
+            Body2 baseBody = GetMainBody();
+
+            if (toolBody == null || baseBody == null)
+            {
+                swApp.SendMsgToUser("Ошибка: нет тел для операции");
+                return false;
+            }
+
+            model.ClearSelection2(true);
+
+            // ВАЖНО: сначала base, потом tool
+            bool sel1 = baseBody.Select2(false, null);
+            bool sel2 = toolBody.Select2(true, null);
+
+            if (!sel1 || !sel2)
+            {
+                swApp.SendMsgToUser("Ошибка выбора тел");
+                return false;
+            }
+
+            Feature cut = fm.InsertCombineFeature(
+                (int)swBodyOperationType_e.SWBODYCUT,
+                null,
+                null
+            );
+            DeleteBody(toolBody);
+
+            if (cut == null)
+            {
+                swApp.SendMsgToUser("Ошибка: Combine Cut не выполнен");
+                return false;
+            }
+
+            model.ClearSelection2(true);
+
+            return true;
+        }
+
+        private void DeleteBody(Body2 body)
+        {
+            if (body == null) return;
+
+            model.ClearSelection2(true);
+
+            body.Select2(false, null);
+
+            model.Extension.DeleteSelection2(
+                (int)swDeleteSelectionOptions_e.swDelete_Absorbed);
+        }
+
 
         public string AddAxis(double[][] Points){
 
@@ -119,6 +207,26 @@ namespace StructuralWeldment
             return;
 		}
 
+        public string CreateSketch(string plane, double[] pts)
+        {
+            model.ClearSelection2(true);
+
+            swModelDocExt.SelectByID2(plane, "PLANE", 0, 0, 0, false, 0, null, 0);
+
+            swSkMgr.InsertSketch(true);
+
+            CreateClosedSketch(pts);
+
+            Sketch sk = (Sketch)swSkMgr.ActiveSketch;
+            Feature feat = (Feature)sk;
+
+            string name = feat.Name;
+
+            swSkMgr.InsertSketch(false);
+
+            return name;
+        }
+
         private void FullyDefineSketch(string name)
         {
             model.ClearSelection2(true);
@@ -163,7 +271,125 @@ namespace StructuralWeldment
         
     }
 
+        private Body2 CreateToolBody(string[] sketches)
+        {
+            model.ClearSelection2(true);
 
+            foreach (var sk in sketches)
+            {
+                swModelDocExt.SelectByID2(sk, "SKETCH", 0, 0, 0, true, 0, null, 0);
+
+                Feature feat = fm.FeatureCut4
+                               (false,
+                                false,
+                                false,
+                                0,
+                                0,
+                                0.01000000000000000021,
+                                0.01000000000000000021,
+                                false,
+                                false,
+                                false,
+                                false,
+                                0.01745329251994333364,
+                                0.01745329251994333364,
+                                false,
+                                false,
+                                false,
+                                false,
+                                false,
+                                true,
+                                true,
+                                true,
+                                true,
+                                false,
+                                0,
+                                0,
+                                false,
+                                false);
+
+                if (feat == null)
+                    throw new Exception("Extrude не создан");
+            }
+            object[] bodies = (object[])part.GetBodies2((int)swBodyType_e.swSolidBody,true);
+
+            if (bodies == null || bodies.Length == 0)
+                throw new Exception("Tool body не найден");
+
+            return bodies[0] as Body2;
+        }
+        private Body2 previewBody;
+
+        public void UpdatePreview(Body2 baseBody, Body2 toolBody)
+        {
+            if (baseBody == null || toolBody == null)
+                return;
+
+            if (previewBody != null)
+                previewBody.HideBody(true);
+
+            previewBody = (Body2)baseBody.Copy();
+
+            int err;
+            previewBody.Operations2(
+                (int)swBodyOperationType_e.SWBODYCUT,
+                toolBody,
+                out err
+            );
+
+            if (err != 0)
+                throw new Exception("Boolean failed: " + err);
+
+            previewBody.Display3(model,
+                (int)swTempBodySelectOptions_e.swTempBodySelectable,
+                0);
+        }
+
+        public bool PreviewCutBody(Weldment wd)
+        {
+            Body2 baseBody = GetMainBody();
+
+            double[] box = GetPointsBoundinBox();
+            double[][] axisPts = wd.GetCentetPonts(box);
+
+            string axis = AddAxis(axisPts);
+            string plane = AddPlaneWork(axis, wd.namePlane, (int)wd.rotationAxis);
+
+            double[] p1 = wd.GetPointsFirstExtrude(true);
+            string sk1 = CreateSketch(plane, p1);
+
+            double[] p2 = wd.GetPointsSecondExtrude(p1);
+            string sk2 = CreateSketch(plane, p2);
+
+            Body2 toolBody = CreateToolBody(new[] { sk1, sk2 });
+            model.ClearSelection2(true);
+
+            // Выбираем base body
+            baseBody.Select2(false, null);
+
+            // Выбираем tool body
+            toolBody.Select2(true, null);
+
+            // Добавляем Combine Cut
+            Feature cut = model.FeatureManager.InsertCombineFeature(
+                (int)swBodyOperationType_e.SWBODYCUT,
+                null, null
+            );
+          //  UpdatePreview(baseBody, toolBody);
+
+            return true;
+        }
+
+        public Body2 GetMainBody()
+        {
+            PartDoc part = (PartDoc)model;
+            object[] bodies = (object[])part.GetBodies2((int)swBodyType_e.swSolidBody, true);
+
+            if (bodies == null || bodies.Length == 0)
+                throw new Exception("Нет базового тела");
+
+            return bodies[0] as Body2;
+        }
 
         public Weldment GetWeldment()
         {

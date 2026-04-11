@@ -10,9 +10,48 @@ namespace StructuralWeldment
     [ComVisibleAttribute(true)]
     public class clsPropMgr : PropertyManagerPage2Handler9
     {
-        public event Action<double> rotate;
-        public event Action action;
-        public event Action<double> angle;
+       // public event Action<double> rotate;
+       // public event Action action;
+      //  public event Action<double> angle;
+
+        public event EventHandler<PreviewEventArgs> PreviewRequested;
+        public event EventHandler<ApplyEventArgs> ApplyRequested;
+
+        private PreviewEventArgs BuildArgs()
+        {
+            return new PreviewEventArgs
+            {
+                Angle = numAngle.Value,
+                Rotation = labelRotation.Value,
+                IsRight = radioRight.Checked
+            };
+        }
+
+
+
+        protected virtual void OnPreviewRequested(PreviewEventArgs e)
+        {
+            var handler = PreviewRequested;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        protected virtual void OnApplyRequested(ApplyEventArgs e)
+        {
+            var handler = ApplyRequested;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        private PreviewEventArgs BuildPreviewArgs()
+        {
+            return new PreviewEventArgs
+            {
+                Angle = numAngle.Value,
+                Rotation = labelRotation.Value,
+                IsRight = radioRight.Checked
+            };
+        }
 
         PropertyManagerPage2 pm_Page;
         PropertyManagerPageGroup pm_Group;
@@ -46,8 +85,8 @@ namespace StructuralWeldment
 
         public clsPropMgr(SldWorks swApp)
         {
-            this.swApp = swApp;
-            this.model = (ModelDoc2)swApp.ActiveDoc;
+           // this.swApp = swApp;
+           // this.model = (ModelDoc2)swApp.ActiveDoc;
 
             int longerrors = 0;
             string pageTitle = "Extrude Control";
@@ -128,14 +167,14 @@ namespace StructuralWeldment
 
         }
 
-        SldWorks swApp;
-        ModelDoc2 model;
+       // SldWorks swApp;
+       // ModelDoc2 model;
 
         public void ShowPreview()
         {
      
         }
-
+        /*
         Body2 CreateCutBody()
         {
             Modeler modeler = (Modeler)swApp.GetModeler();
@@ -154,7 +193,7 @@ namespace StructuralWeldment
 
             return sheet;
         }
-
+        */
 
         #region IPropertyManagerPage2Handler9 Members  
         public void AfterActivation()
@@ -174,10 +213,14 @@ namespace StructuralWeldment
 
         public void OnButtonPress(int Id)
         {
-            if (Id == 4)
+            if (Id == BtnRotationID)
             {
-                labelRotation.Value = labelRotation.Value + 90 * Math.PI / 180.0;
-                if (labelRotation.Value > 270 * Math.PI / 180.0) labelRotation.Value = 0;
+                labelRotation.Value += 90 * Math.PI / 180.0;
+
+                if (labelRotation.Value > 270 * Math.PI / 180.0)
+                    labelRotation.Value = 0;
+
+                OnPreviewRequested(BuildPreviewArgs());
             }
         }
 
@@ -188,12 +231,17 @@ namespace StructuralWeldment
 
         public void OnClose(int reason)
         {
-            System.Diagnostics.Debug.Print("Close reason: " + reason);
-
             if (reason == (int)swPropertyManagerPageCloseReasons_e.swPropertyManagerPageClose_Okay)
             {
-                action.Invoke();
+                OnApplyRequested(new ApplyEventArgs
+                {
+                    Angle = numAngle.Value,
+                    Rotation = labelRotation.Value,
+                    IsRight = radioRight.Checked
+                });
             }
+
+            IsOpen = false;
         }
 
         public void OnComboboxEditChanged(int Id, string Text)
@@ -253,7 +301,10 @@ namespace StructuralWeldment
 
         public void OnNumberboxChanged(int Id, double Value)
         {
-          
+            if (Id == NumAngleID || Id == LabelRotationID)
+            {
+                OnPreviewRequested(BuildPreviewArgs());
+            }
         }
 
         public void OnNumberBoxTrackingCompleted(int Id, double Value)
@@ -278,13 +329,7 @@ namespace StructuralWeldment
 
         public bool OnPreview()
         {
-            Body2 body = CreateCutBody();
-
-            body.Display3(
-                model,
-                (int)swTempBodySelectOptions_e.swTempBodySelectable,
-               -1);
-
+            PreviewRequested.Invoke(this, BuildArgs());
             return true;
         }
 
@@ -359,4 +404,18 @@ namespace StructuralWeldment
         }
         #endregion
     }
+}
+
+public class PreviewEventArgs : EventArgs
+{
+    public double Angle { get; set; }
+    public double Rotation { get; set; }
+    public bool IsRight { get; set; }
+}
+
+public class ApplyEventArgs : EventArgs
+{
+    public double Angle { get; set; }
+    public double Rotation { get; set; }
+    public bool IsRight { get; set; }
 }

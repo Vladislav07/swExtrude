@@ -29,12 +29,13 @@ namespace StructuralWeldment
             service = new Service(sw);
             wd = service.GetWeldment();
             sw.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swStopDebuggingVstaOnExit, false);
-            Extrude();
+           // Extrude();
 
             pm = new clsPropMgr(sw);
-            pm.action += Pm_action;
-            pm.angle += Pm_angle;
-            pm.rotate += Pm_rotate;
+           
+
+            pm.PreviewRequested += OnPreviewRequested;
+            pm.ApplyRequested += OnApplyRequested;
             pm.Show();
             if (pm != null)
             {
@@ -48,14 +49,20 @@ namespace StructuralWeldment
 
         }
 
-        private void Pm_rotate(double obj)
+        private void OnApplyRequested(object sender, ApplyEventArgs e)
         {
-            throw new NotImplementedException();
+            wd.axis = e.Angle * 180.0 / Math.PI;
+            wd.rotationAxis = (RotationAxis)e.Rotation;
+
+            service.BuildCutBody(wd);
         }
 
-        private void Pm_angle(double obj)
+        private void OnPreviewRequested(object sender, PreviewEventArgs e)
         {
-            throw new NotImplementedException();
+            wd.axis = e.Angle * 180.0 / Math.PI;
+            wd.rotationAxis = (RotationAxis)e.Rotation;
+
+            service.PreviewCutBody(wd);
         }
 
         private void Extrude()
@@ -68,16 +75,13 @@ namespace StructuralWeldment
             service.AddSketch(namePlaneBase, PontsFirst);
             double[] PontsSecond = wd.GetPointsSecondExtrude(PontsFirst);
             service.AddSketch(namePlaneBase, PontsSecond);
+            
         }
 
         private void Pm_action()
         {
-            //service.InsertFeature();
-    
-          
+            service.ApplyCut(wd);
 
-            
-            
         }
 
         public void Completion(){
