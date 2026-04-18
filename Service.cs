@@ -13,6 +13,7 @@ using System.IO;
 using SolidWorks.Interop.sldworks;
 using SolidWorks.Interop.swconst;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace StructuralWeldment
 {
@@ -70,7 +71,7 @@ namespace StructuralWeldment
 
             if (toolBody == null)
                 throw new Exception("Не удалось создать tool body");
-          
+            ApplyCut(wd);
 
             return toolBody;
         }
@@ -279,7 +280,8 @@ namespace StructuralWeldment
             {
                 swModelDocExt.SelectByID2(sk, "SKETCH", 0, 0, 0, true, 0, null, 0);
 
-                Feature feat = fm.FeatureCut4
+/*
+                 Feature feat = fm.FeatureCut4
                                (false,
                                 false,
                                 false,
@@ -306,22 +308,48 @@ namespace StructuralWeldment
                                 0,
                                 0,
                                 false,
-                                false);
-
+                                false); 
+ */
+              Feature feat = fm.FeatureExtrusion3(
+               false,   // solid
+               false,   //Flip
+               false,   //Dir
+               (int)swEndConditions_e.swEndCondBlind,
+               (int)swEndConditions_e.swEndCondBlind,
+               0.01, 0.01,
+               false,  //Dchk1
+               false,  ////Dchk2
+               false,
+               false,
+               0.0,
+               0.0,
+               false,     //OffsetReverse1            
+               false,     //OffsetReverse2
+               false,     //TranslateSurface1
+               false,      //TranslateSurface2  
+               false,      //Merge 
+               true,      //UseFeatScope
+               true,      //UseAutoSelect 
+               0,        //T0
+               0.0,      //StartOffset
+               false);   //FlipStartOffset 
                 if (feat == null)
                     throw new Exception("Extrude не создан");
             }
-            object[] bodies = (object[])part.GetBodies2((int)swBodyType_e.swSolidBody,true);
+             object[] bodies = (object[])part.GetBodies2((int)swBodyType_e.swSolidBody,true);
+          
+             if (bodies == null || bodies.Length == 0)
+                 throw new Exception("Tool body не найден");
 
-            if (bodies == null || bodies.Length == 0)
-                throw new Exception("Tool body не найден");
-
-            return bodies[0] as Body2;
+            return bodies[1] as Body2;
         }
         private Body2 previewBody;
 
-        public void UpdatePreview(Body2 baseBody, Body2 toolBody)
+        public void UpdatePreview()
         {
+            object[] bodies = (object[])part.GetBodies2((int)swBodyType_e.swSolidBody, true);
+            Body2 baseBody = bodies[0] as Body2;
+            Body2 toolBody = bodies[1] as Body2;
             if (baseBody == null || toolBody == null)
                 return;
 
@@ -329,8 +357,22 @@ namespace StructuralWeldment
                 previewBody.HideBody(true);
 
             previewBody = (Body2)baseBody.Copy();
+            string n11 = baseBody.Name;
+            string n1 = previewBody.Name;
+            string n2 = toolBody.Name;
+            // baseBody.HideBody(true);
+
+
+
+            FaultEntity check1 = (FaultEntity)previewBody.Check3;
+            FaultEntity check2 = toolBody.Check3;
+            int e1 = check1.ErrorCode[0];
+            int e2 = check2.ErrorCode[0];
+            // if (check1 != 0 || check2 != 0)
+            //    throw new Exception("Invalid body geometry");
 
             int err;
+         
             previewBody.Operations2(
                 (int)swBodyOperationType_e.SWBODYCUT,
                 toolBody,
@@ -339,15 +381,34 @@ namespace StructuralWeldment
 
             if (err != 0)
                 throw new Exception("Boolean failed: " + err);
+          /*
+            double[] color = new double[9];
 
-            previewBody.Display3(model,
-                (int)swTempBodySelectOptions_e.swTempBodySelectable,
-                0);
+            // RGB (0..1)
+            color[0] = 1.0; // R
+            color[1] = 0.0; // G
+            color[2] = 0.0; // B
+
+            // Ambient / Diffuse / Specular / Shininess / Transparency / Emission
+            color[3] = 1.0; // Ambient
+            color[4] = 1.0; // Diffuse
+            color[5] = 1.0; // Specular
+            color[6] = 0.5; // Shininess (0..1)
+            color[7] = 0.0; // Transparency (0 = непрозрачный)
+            color[8] = 0.0; // Emission
+
+            previewBody.MaterialPropertyValues2 = color;
+            */
+            int u= previewBody.Display3(model,
+                255,
+                (int)swTempBodySelectOptions_e.swTempBodySelectable
+                );
+            string o = u.ToString();
         }
 
         public bool PreviewCutBody(Weldment wd)
         {
-            Body2 baseBody = GetMainBody();
+            //Body2 baseBody = GetMainBody();
 
             double[] box = GetPointsBoundinBox();
             double[][] axisPts = wd.GetCentetPonts(box);
@@ -358,24 +419,22 @@ namespace StructuralWeldment
             double[] p1 = wd.GetPointsFirstExtrude(true);
             string sk1 = CreateSketch(plane, p1);
 
-            double[] p2 = wd.GetPointsSecondExtrude(p1);
-            string sk2 = CreateSketch(plane, p2);
+           // double[] p2 = wd.GetPointsSecondExtrude(p1);
+           // string sk2 = CreateSketch(plane, p2);
 
-            Body2 toolBody = CreateToolBody(new[] { sk1, sk2 });
-            model.ClearSelection2(true);
-
-            // Выбираем base body
-            baseBody.Select2(false, null);
-
-            // Выбираем tool body
-            toolBody.Select2(true, null);
-
-            // Добавляем Combine Cut
-            Feature cut = model.FeatureManager.InsertCombineFeature(
+            Body2 toolBody = CreateToolBody(new[] { sk1 });
+            model.EditRebuild3();
+         
+            /*
+           bool st =swModelDocExt.SelectByID2(baseBody.Name, "SOLIDBODY", 0,0,0,false,1,null,0);
+            st= swModelDocExt.SelectByID2(toolBody.Name, "SOLIDBODY", 0, 0, 0, true, 2, null, 0);
+            Feature cut = fm.InsertCombineFeature(
                 (int)swBodyOperationType_e.SWBODYCUT,
                 null, null
             );
-          //  UpdatePreview(baseBody, toolBody);
+            */
+                        
+           UpdatePreview();
 
             return true;
         }

@@ -29,11 +29,7 @@ namespace StructuralWeldment
             service = new Service(sw);
             wd = service.GetWeldment();
             sw.SetUserPreferenceToggle((int)swUserPreferenceToggle_e.swStopDebuggingVstaOnExit, false);
-           // Extrude();
-
-            pm = new clsPropMgr(sw);
-           
-
+            pm = new clsPropMgr(sw);        
             pm.PreviewRequested += OnPreviewRequested;
             pm.ApplyRequested += OnApplyRequested;
             pm.Show();
@@ -65,36 +61,6 @@ namespace StructuralWeldment
             service.PreviewCutBody(wd);
         }
 
-        private void Extrude()
-        {
-            double[] box = service.GetPointsBoundinBox();
-            double[][] Points = wd.GetCentetPonts(box);
-            string nameAxis = service.AddAxis(Points);
-            string namePlaneBase = service.AddPlaneWork(nameAxis, wd.namePlane, (int)wd.rotationAxis);
-            double[] PontsFirst = wd.GetPointsFirstExtrude(true);
-            service.AddSketch(namePlaneBase, PontsFirst);
-            double[] PontsSecond = wd.GetPointsSecondExtrude(PontsFirst);
-            service.AddSketch(namePlaneBase, PontsSecond);
-            
-        }
-
-        private void Pm_action()
-        {
-            service.ApplyCut(wd);
-
-        }
-
-        public void Completion(){
-
-		}
-
-		public void Reverse(){
-
-		}
-
-		public void Rotate(){
-
-		}
 
 	}
 
